@@ -1,0 +1,41 @@
+name: Monthly update
+
+# 毎月1日 00:00 UTC（= 日本時間 09:00）に CiNii を再取得して index.html を更新。
+# 手動実行（Actions画面の Run workflow）も可能。
+on:
+  schedule:
+    - cron: "0 0 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: monthly-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rebuild index.html from CiNii
+        run: python build.py
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- index.html; then
+            echo "変更なし（件数・内容に変化なし）"
+          else
+            git add index.html
+            git commit -m "chore: 月次自動更新（CiNii再取得）"
+            git push
+            echo "index.html を更新して push しました"
+          fi

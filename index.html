@@ -240,6 +240,15 @@ footer {
 footer a { color: var(--accent); text-decoration: none; }
 footer a:hover { text-decoration: underline; }
 
+/* ===== NOTES ===== */
+.notes {
+  max-width: 1000px; margin: 3rem auto 0; padding: 0 1.5rem;
+  font-size: 0.8rem; color: var(--text-muted); line-height: 1.9;
+}
+.notes p { margin-bottom: 0.6rem; }
+.notes p:last-child { margin-bottom: 0; }
+.notes strong { color: #555; font-weight: 500; }
+
 /* ===== PRINT ===== */
 @media print {
   html, body { background: #fff; color: #000; }
@@ -305,10 +314,14 @@ footer a:hover { text-decoration: underline; }
 
 <main><div id="cardList"></div></main>
 
+<section class="notes">
+  <p><strong>データについて：</strong>本データベースの論文情報は，CiNii Research（国立情報学研究所〔NII〕提供）から取得し，毎月自動で更新しています（取得には製作者が開発した「CiNii一目瞭然」を利用）。書籍・英語文献は，CiNii に収録されないものを中心に別途手動で収録しています。</p>
+  <p><strong>免責事項：</strong>本データベースは風景構成法研究に関する文献情報を収集・整理したものですが，掲載情報の正確性・完全性・最新性を保証するものではありません。データの一部は上記の外部サービスから自動取得しており，元データに起因する誤り・欠落・重複が含まれる場合があります。文献を利用・引用される際は，必ず原典にあたってご確認ください。本データベースの利用によって生じたいかなる損害についても，製作者は責任を負いません。</p>
+</section>
+
 <footer>
   風景構成法研究文献データベース ／ <a href="https://sasakireijiyagi.com/home">ヤギ製作所</a><br>
-  製作：佐々木玲仁（九州大学）<br>
-  データ出典：CiNii Research ほか
+  製作：佐々木玲仁（九州大学）
 </footer>
 
 <script>

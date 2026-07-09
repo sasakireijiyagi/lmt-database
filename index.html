@@ -146,6 +146,26 @@ h1::after {
 .btn-decade:hover { border-color: var(--accent); color: var(--accent); }
 .btn-decade.active { border-color: var(--accent); color: #fff; background: var(--accent); }
 
+/* ===== INTRO ===== */
+.intro { max-width: 1000px; margin: 2rem auto 0; padding: 0 1.5rem; }
+.intro-inner {
+  background: var(--card-bg);
+  border-radius: 9px;
+  border-left: 3px solid var(--accent);
+  box-shadow: 0 2px 7px var(--card-shadow);
+  padding: 1.3rem 1.6rem;
+  font-size: 0.95rem;
+  line-height: 2;
+  color: #444;
+}
+.intro-inner h2 {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 1.05rem;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
 /* ===== RESULT BAR ===== */
 .result-bar {
   max-width: 1000px; margin: 1.5rem auto 0; padding: 0 1.5rem;
@@ -273,6 +293,13 @@ footer a:hover { text-decoration: underline; }
   </div>
 </div>
 </header>
+
+<div class="intro">
+  <div class="intro-inner">
+    <h2>このデータベースについて</h2>
+    <p>このデータベースは，これから風景構成法の研究を始める方が文献を一覧しやすいように，そして最近の研究を追い切れていない人（私もそうです）が新たな研究を行うときに文献を当たりやすいようにと思い作りました。風景構成法研究の振興に一役買えればと思っています。</p>
+  </div>
+</div>
 
 <div class="result-bar"><span id="resultCount">読込中…</span></div>
 

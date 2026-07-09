@@ -158,13 +158,19 @@ h1::after {
   line-height: 2;
   color: #444;
 }
-.intro-inner h2 {
+.intro-inner summary {
   font-family: var(--serif);
   font-weight: 400;
   font-size: 1.05rem;
   color: var(--text);
-  margin-bottom: 0.5rem;
+  cursor: pointer;
+  list-style: none;
+  outline: none;
 }
+.intro-inner summary::-webkit-details-marker { display: none; }
+.intro-inner summary::before { content: "▸"; color: var(--accent); margin-right: 0.5em; font-size: 0.85em; }
+.intro-inner[open] summary::before { content: "▾"; }
+.intro-inner[open] summary { margin-bottom: 0.6rem; }
 
 /* ===== RESULT BAR ===== */
 .result-bar {
@@ -240,6 +246,29 @@ footer {
 footer a { color: var(--accent); text-decoration: none; }
 footer a:hover { text-decoration: underline; }
 
+/* ===== CITATION ===== */
+.citation { max-width: 1000px; margin: 3rem auto 0; padding: 0 1.5rem; }
+.citation-label {
+  text-align: center; font-size: 0.78rem; letter-spacing: 0.15em;
+  color: var(--text-muted); margin-bottom: 0.8rem;
+}
+.citation-box {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  box-shadow: 0 2px 7px var(--card-shadow);
+  padding: 1.4rem 1.6rem;
+  font-size: 0.9rem; line-height: 1.9; color: #555;
+}
+.citation-lead { margin-bottom: 0.8rem; }
+.citation-ref {
+  font-family: var(--serif); color: var(--text);
+  padding-left: 1.4em; text-indent: -1.4em;
+}
+.citation-ref + .citation-ref { margin-top: 0.5rem; }
+.citation-box a { color: var(--accent); text-decoration: none; word-break: break-all; }
+.citation-box a:hover { text-decoration: underline; }
+
 /* ===== NOTES ===== */
 .notes {
   max-width: 1000px; margin: 3rem auto 0; padding: 0 1.5rem;
@@ -304,15 +333,24 @@ footer a:hover { text-decoration: underline; }
 </header>
 
 <div class="intro">
-  <div class="intro-inner">
-    <h2>このデータベースについて</h2>
+  <details class="intro-inner">
+    <summary>このデータベースについて</summary>
     <p>このデータベースは，これから風景構成法の研究を始める方が文献を一覧しやすいように，そして最近の研究を追い切れていない人（私もそうです）が新たな研究を行うときに文献を当たりやすいようにと思い作りました。風景構成法研究の振興に一役買えればと思っています。</p>
-  </div>
+  </details>
 </div>
 
 <div class="result-bar"><span id="resultCount">読込中…</span></div>
 
 <main><div id="cardList"></div></main>
+
+<section class="citation">
+  <p class="citation-label">引用のお願い</p>
+  <div class="citation-box">
+    <p class="citation-lead">本データベースを研究等でご利用の際は，以下のようにご引用ください：</p>
+    <p class="citation-ref">佐々木玲仁 (2026). 風景構成法研究文献データベース [データベース]. <a href="https://sasakireijiyagi.github.io/lmt-database/">https://sasakireijiyagi.github.io/lmt-database/</a></p>
+    <p class="citation-ref">Sasaki, R. (2026). Landscape Montage Technique Literature Database [Database]. <a href="https://sasakireijiyagi.github.io/lmt-database/">https://sasakireijiyagi.github.io/lmt-database/</a></p>
+  </div>
+</section>
 
 <section class="notes">
   <p><strong>データについて：</strong>本データベースの論文情報は，CiNii Research（国立情報学研究所〔NII〕提供）から取得し，毎月自動で更新しています（取得には製作者が開発した「CiNii一目瞭然」を利用）。書籍・英語文献は，CiNii に収録されないものを中心に別途手動で収録しています。</p>

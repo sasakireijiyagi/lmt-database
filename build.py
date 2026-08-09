@@ -87,6 +87,17 @@ DUPLICATE_CRIDS = {
     "https://cir.nii.ac.jp/crid/1573950400145169152": "https://cir.nii.ac.jp/crid/1571980075451025664",  # 同上（略記）
     "https://cir.nii.ac.jp/crid/1572824502941087360": "https://cir.nii.ac.jp/crid/1390282679757261312",  # 柳沢和彦ら
     "https://cir.nii.ac.jp/crid/1571698600331485952": "https://cir.nii.ac.jp/crid/1570854174602386304",  # 山中康裕（風景構成法その後の発展）
+    "https://cir.nii.ac.jp/crid/1573950399672496384": "https://cir.nii.ac.jp/crid/1573668924279443584",  # 山中康裕「事始め」（中井久夫著作集別巻・シンポジウム表記）
+    "https://cir.nii.ac.jp/crid/1572824499987766656": "https://cir.nii.ac.jp/crid/1573668924279443584",  # 山中康裕「事始め」（中井久夫著作集別巻）
+    "https://cir.nii.ac.jp/crid/1010000782445986195": "https://cir.nii.ac.jp/crid/1520572357816968320",  # 慢性患者の描画の変化と常同性
+    "https://cir.nii.ac.jp/crid/1390856893076976768": "https://cir.nii.ac.jp/crid/1520292472586831744",  # 追加アイテムの特徴についてⅡ
+    "https://cir.nii.ac.jp/crid/1390303321517960704": "https://cir.nii.ac.jp/crid/1520858690761691136",  # 中井久夫の絵画療法は,こうして風景構成法につながった
+    "https://cir.nii.ac.jp/crid/1390864869328280576": "https://cir.nii.ac.jp/crid/1520853834149365248",  # NIRSを用いた脳活動計測
+    "https://cir.nii.ac.jp/crid/1570854177965963520": "https://cir.nii.ac.jp/crid/1571980078416133120",  # 松井華子（風景構成法から見た対人恐怖的心性について）
+    "https://cir.nii.ac.jp/crid/1573387449066552320": "https://cir.nii.ac.jp/crid/1571698599442435712",  # 他技法との比較
+    "https://cir.nii.ac.jp/crid/1390585183424432768": "https://cir.nii.ac.jp/crid/1520583238594517888",  # 風景構成法に通底する風景巡礼の時間
+    "https://cir.nii.ac.jp/crid/1571417127509955456": "https://cir.nii.ac.jp/crid/1010000782475883521",  # 統合失調症者の風景構成法における川の類型
+    "https://cir.nii.ac.jp/crid/1390866271471382144": "https://cir.nii.ac.jp/crid/1520014265833217408",  # 中井久夫と風景構成法
 }
 
 

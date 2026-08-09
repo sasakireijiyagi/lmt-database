@@ -63,6 +63,33 @@ def _record_key(r):
     return r["url"] or (r["title"] + r["authors"])
 
 
+# CiNii が同一文献を複数CRIDで別々に索引しているケース（drop_url -> keep_url）。
+# 手動確認済み。ここに無い新規の重複はそのまま残る（要目視チェック）。
+DUPLICATE_CRIDS = {
+    "https://cir.nii.ac.jp/crid/1390570000439462656": "https://cir.nii.ac.jp/crid/1390007050486043520",  # 佐渡忠洋
+    "https://cir.nii.ac.jp/crid/1390001204471698944": "https://cir.nii.ac.jp/crid/1570854177965963520",  # 松井華子
+    "https://cir.nii.ac.jp/crid/1570854177965961984": "https://cir.nii.ac.jp/crid/1573668928276403072",  # 角野善宏
+    "https://cir.nii.ac.jp/crid/1390001204471703424": "https://cir.nii.ac.jp/crid/1573668928276403072",  # 角野善宏
+    "https://cir.nii.ac.jp/crid/1390290700503034880": "https://cir.nii.ac.jp/crid/1572543026666816640",  # 橋本泰子
+    "https://cir.nii.ac.jp/crid/1570572700824257024": "https://cir.nii.ac.jp/crid/1571698599858806144",  # 中井久夫（風景構成法その後の発展）
+    "https://cir.nii.ac.jp/crid/1573387450017147264": "https://cir.nii.ac.jp/crid/1571698599858806144",  # 中井久夫（同上）
+    "https://cir.nii.ac.jp/crid/1571980075487335808": "https://cir.nii.ac.jp/crid/1573668924279446016",  # 中井久夫（精神科治療学）
+    "https://cir.nii.ac.jp/crid/1010282256777780503": "https://cir.nii.ac.jp/crid/1010282256777780484",  # 濱野清志ら（スリランカ・カメルーン）
+    "https://cir.nii.ac.jp/crid/1010282256777780512": "https://cir.nii.ac.jp/crid/1010282256777780481",  # 濱野清志ら（バリ州）
+    "https://cir.nii.ac.jp/crid/1010282256777780507": "https://cir.nii.ac.jp/crid/1010282256777780481",  # 濱野清志ら（同上）
+    "https://cir.nii.ac.jp/crid/1572543025086941568": "https://cir.nii.ac.jp/crid/1573668924279443584",  # 山中康裕「事始め」
+    "https://cir.nii.ac.jp/crid/1571417124465464960": "https://cir.nii.ac.jp/crid/1573668924279443584",  # 山中康裕「事始め」（表記崩れ）
+    "https://cir.nii.ac.jp/crid/1572543025404441216": "https://cir.nii.ac.jp/crid/1572543024372600576",  # 高石恭子「検討」
+    "https://cir.nii.ac.jp/crid/1574231874649205760": "https://cir.nii.ac.jp/crid/1572824500063730176",  # 高石恭子「研究」（表記崩れ）
+    "https://cir.nii.ac.jp/crid/1573105975040440192": "https://cir.nii.ac.jp/crid/1571980075451025664",  # 皆藤章『風景構成法 その基礎と実践』
+    "https://cir.nii.ac.jp/crid/1574231874105877760": "https://cir.nii.ac.jp/crid/1571980075451025664",  # 同上
+    "https://cir.nii.ac.jp/crid/1573105974661499648": "https://cir.nii.ac.jp/crid/1571980075451025664",  # 同上（出版社誤表記あり）
+    "https://cir.nii.ac.jp/crid/1573950400145169152": "https://cir.nii.ac.jp/crid/1571980075451025664",  # 同上（略記）
+    "https://cir.nii.ac.jp/crid/1572824502941087360": "https://cir.nii.ac.jp/crid/1390282679757261312",  # 柳沢和彦ら
+    "https://cir.nii.ac.jp/crid/1571698600331485952": "https://cir.nii.ac.jp/crid/1570854174602386304",  # 山中康裕（風景構成法その後の発展）
+}
+
+
 def fetch_cinii():
     """CiNii 論文を全件取得し (records, total, complete) を返す。
 
@@ -154,7 +181,7 @@ def _existing_cinii():
         data = _existing_data(open(HTML, encoding="utf-8").read()) or []
     except Exception:
         return []
-    return [d for d in data if d.get("type") == "cinii"]
+    return [d for d in data if d.get("type") == "cinii" and d.get("url") not in DUPLICATE_CRIDS]
 
 
 def build_data():
@@ -164,6 +191,8 @@ def build_data():
     fresh, total, complete = fetch_cinii()  # 既に url(crid) で union 済み
     # manual と同一URLの論文は手動分を優先して除外（二重掲載防止）
     fresh = [r for r in fresh if not (r["url"] and r["url"] in manual_urls)]
+    # CiNii側の重複索引（既知分）を除外
+    fresh = [r for r in fresh if r["url"] not in DUPLICATE_CRIDS]
 
     if os.environ.get("REBUILD"):
         # メンテ用: 既存を無視して今回取得だけで完全再構築（消えた論文は落ちる）
@@ -175,7 +204,10 @@ def build_data():
         # 通常: 加算マージ。CiNii の件数は 400↔401 のように揺れるため、
         # 「今回たまたま欠けた論文」を失わない。既存を土台に、今回取得で
         # 上書き（メタデータ更新）＆新規追加する（自動削除はしない）。
-        merged = {_record_key(r): r for r in _existing_cinii()}
+        # 既存分にも manual と同一URLが紛れることがある（後から manual に
+        # 追加された場合）ので、ここでも除外する（二重掲載防止）。
+        merged = {_record_key(r): r for r in _existing_cinii()
+                  if not (r.get("url") and r["url"] in manual_urls)}
         for r in fresh:
             merged[_record_key(r)] = r
 

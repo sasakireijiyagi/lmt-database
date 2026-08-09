@@ -1,0 +1,27 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 49.212.183.8 >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ubuntu@49.212.183.8 '
+            cd ~/apps/lmt-database &&
+            git pull &&
+            docker build -t lmt-database . &&
+            docker stop lmt-database &&
+            docker rm lmt-database &&
+            docker run -d --name lmt-database --network web --restart unless-stopped lmt-database
+          '

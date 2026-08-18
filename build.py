@@ -252,6 +252,7 @@ def update_html(data, n_cinii):
 
     n_book = sum(1 for d in data if d["type"] == "book")
     n_eng = sum(1 for d in data if d["type"] == "english")
+    n_review = sum(1 for d in data if d["type"] == "review")
     total = len(data)
     jst = timezone(timedelta(hours=9))
     ym = _jp_month(datetime.now(jst))
@@ -265,17 +266,19 @@ def update_html(data, n_cinii):
 
     # (2) ヘッダーの件数 + 最終更新（データが変わった時だけ進める）
     header = (f"収録 <strong>CiNii論文 {n_cinii}件</strong> ／ "
-              f"<strong>書籍 {n_book}件</strong> ／ <strong>英語文献 {n_eng}件</strong>"
+              f"<strong>書籍 {n_book}件</strong> ／ <strong>英語文献 {n_eng}件</strong> ／ "
+              f"<strong>書評 {n_review}件</strong>"
               f"　合計 <strong>{total}件</strong>　（最終更新 {ym}）")
     html, n2 = re.subn(
         r"収録 <strong>CiNii論文 \d+件</strong> ／ <strong>書籍 \d+件</strong> ／ "
-        r"<strong>英語文献 \d+件</strong>　合計 <strong>\d+件</strong>　（最終更新 [^）]*）",
+        r"<strong>英語文献 \d+件</strong>(?: ／ <strong>書評 \d+件</strong>)?"
+        r"　合計 <strong>\d+件</strong>　（最終更新 [^）]*）",
         header, html, count=1)
     if n2 != 1:
         raise RuntimeError("ヘッダーの件数行を1箇所置換できなかった")
 
     open(HTML, "w", encoding="utf-8").write(html)
-    return n_cinii, n_book, n_eng, total, ym
+    return n_cinii, n_book, n_eng, n_review, total, ym
 
 
 def main():
@@ -288,8 +291,8 @@ def main():
     if result is None:
         print("[変更なし] データに変化なし。index.html は更新しない")
         return
-    n_cinii, n_book, n_eng, total, ym = result
-    print(f"[更新] CiNii {n_cinii} / 書籍 {n_book} / 英語 {n_eng} / 合計 {total}（最終更新 {ym}）")
+    n_cinii, n_book, n_eng, n_review, total, ym = result
+    print(f"[更新] CiNii {n_cinii} / 書籍 {n_book} / 英語 {n_eng} / 書評 {n_review} / 合計 {total}（最終更新 {ym}）")
 
 
 if __name__ == "__main__":

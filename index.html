@@ -18,9 +18,11 @@
 :root {
   --accent: #e63946;
   --accent-soft: #fdeaec;
+  /* 文字用の赤（同じ色相で少し濃い。白・#f9f9f9・#fdeaec の上で4.5以上） */
+  --accent-text: #c92d3a;
   --bg: #f9f9f9;
   --text: #1a1a1a;
-  --text-muted: #777;
+  --text-muted: #717171;
   --card-bg: #ffffff;
   --card-shadow: rgba(0, 0, 0, 0.05);
   --border: #ececec;
@@ -35,6 +37,10 @@
   --english-soft: #ececfb;
   --review: #1f7a72;
   --review-soft: #e2f2f0;
+  /* 種別カラーの文字用（同じ色相で少し濃い。淡い地・白の上で4.5以上） */
+  --cinii-text: #29794d;
+  --book-text: #8a6520;
+  --review-text: #1e766e;
 }
 
 html, body {
@@ -96,7 +102,7 @@ h1::after {
 .search-wrap input {
   width: 100%;
   background: var(--card-bg);
-  border: 1px solid var(--border);
+  border: 1px solid var(--text-muted);
   border-radius: 10px;
   color: var(--text);
   font-family: var(--sans);
@@ -107,7 +113,7 @@ h1::after {
   transition: border-color .2s, box-shadow .2s;
 }
 .search-wrap input:focus { border-color: var(--accent); box-shadow: 0 2px 10px rgba(230,57,70,0.12); }
-.search-wrap input::placeholder { color: #aaa; }
+.search-wrap input::placeholder { color: var(--text-muted); }
 .search-clear {
   position: absolute; right: 0.6rem; top: 50%; transform: translateY(-50%);
   background: none; border: none; color: var(--text-muted); cursor: pointer;
@@ -130,12 +136,12 @@ h1::after {
   box-shadow: 0 2px 8px var(--card-shadow);
 }
 .btn-filter:hover { border-color: var(--accent); color: var(--text); }
-.btn-filter.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); font-weight: 500; }
-.btn-filter.active-cinii { border-color: var(--cinii); color: var(--cinii); background: var(--cinii-soft); font-weight: 500; }
-.btn-filter.active-book { border-color: var(--book); color: var(--book); background: var(--book-soft); font-weight: 500; }
+.btn-filter.active { border-color: var(--accent); color: var(--accent-text); background: var(--accent-soft); font-weight: 500; }
+.btn-filter.active-cinii { border-color: var(--cinii); color: var(--cinii-text); background: var(--cinii-soft); font-weight: 500; }
+.btn-filter.active-book { border-color: var(--book); color: var(--book-text); background: var(--book-soft); font-weight: 500; }
 .btn-filter.active-english { border-color: var(--english); color: var(--english); background: var(--english-soft); font-weight: 500; }
-.btn-filter.active-review { border-color: var(--review); color: var(--review); background: var(--review-soft); font-weight: 500; }
-.sort-select { color: var(--text); }
+.btn-filter.active-review { border-color: var(--review); color: var(--review-text); background: var(--review-soft); font-weight: 500; }
+.sort-select { color: var(--text); border-color: var(--text-muted); }
 
 /* ===== DECADE ROW ===== */
 .decade-row { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: center; margin-top: 0.9rem; }
@@ -150,8 +156,8 @@ h1::after {
   cursor: pointer;
   transition: all .15s;
 }
-.btn-decade:hover { border-color: var(--accent); color: var(--accent); }
-.btn-decade.active { border-color: var(--accent); color: #fff; background: var(--accent); }
+.btn-decade:hover { border-color: var(--accent); color: var(--accent-text); }
+.btn-decade.active { border-color: var(--accent-text); color: #fff; background: var(--accent-text); }
 
 /* ===== INTRO ===== */
 .intro { max-width: 1000px; margin: 2rem auto 0; padding: 0 1.5rem; }
@@ -184,7 +190,7 @@ h1::after {
   max-width: 1000px; margin: 1.5rem auto 0; padding: 0 1.5rem;
   font-size: 0.85rem; color: var(--text-muted); text-align: center;
 }
-.result-bar strong { color: var(--accent); font-weight: 500; }
+.result-bar strong { color: var(--accent-text); font-weight: 500; }
 
 /* ===== MAIN ===== */
 main { max-width: 1000px; margin: 1rem auto 0; padding: 0 1.5rem 4rem; }
@@ -211,10 +217,10 @@ main { max-width: 1000px; margin: 1rem auto 0; padding: 0 1.5rem 4rem; }
   margin-top: 0.15rem;
   white-space: nowrap;
 }
-.badge-cinii { background: var(--cinii-soft); color: var(--cinii); }
-.badge-book { background: var(--book-soft); color: var(--book); }
+.badge-cinii { background: var(--cinii-soft); color: var(--cinii-text); }
+.badge-book { background: var(--book-soft); color: var(--book-text); }
 .badge-english { background: var(--english-soft); color: var(--english); }
-.badge-review { background: var(--review-soft); color: var(--review); }
+.badge-review { background: var(--review-soft); color: var(--review-text); }
 
 .card-title {
   font-size: 0.95rem;
@@ -229,7 +235,7 @@ main { max-width: 1000px; margin: 1rem auto 0; padding: 0 1.5rem 4rem; }
   border-bottom: 1px solid transparent;
   transition: border-color .2s, color .2s;
 }
-.card-title a:hover { color: var(--accent); border-color: var(--accent); }
+.card-title a:hover { color: var(--accent-text); border-color: var(--accent); }
 
 .card-meta {
   font-size: 0.77rem;
@@ -248,11 +254,10 @@ main { max-width: 1000px; margin: 1rem auto 0; padding: 0 1.5rem 4rem; }
 
 /* ===== FOOTER ===== */
 footer {
-  text-align: center; font-size: 0.85rem; color: #999;
+  text-align: center; font-size: 0.85rem; color: var(--text-muted);
   margin: 3rem auto 2rem; max-width: 1000px; padding: 0 1.5rem;
 }
-footer a { color: var(--accent); text-decoration: none; }
-footer a:hover { text-decoration: underline; }
+footer a { color: var(--accent-text); text-decoration: underline; }
 
 /* ===== CITATION ===== */
 .citation { max-width: 1000px; margin: 3rem auto 0; padding: 0 1.5rem; }
@@ -274,7 +279,7 @@ footer a:hover { text-decoration: underline; }
   padding-left: 1.4em; text-indent: -1.4em;
 }
 .citation-ref + .citation-ref { margin-top: 0.5rem; }
-.citation-box a { color: var(--accent); text-decoration: none; word-break: break-all; }
+.citation-box a { color: var(--accent-text); text-decoration: none; word-break: break-all; }
 .citation-box a:hover { text-decoration: underline; }
 
 /* ===== NOTES ===== */

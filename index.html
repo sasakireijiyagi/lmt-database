@@ -25,6 +25,8 @@
   --card-bg: #ffffff;
   --card-shadow: rgba(0, 0, 0, 0.05);
   --border: #ececec;
+  /* 入力欄の枠（外の地 #f9f9f9 との差が3以上になる一番淡い灰） */
+  --border-input: #8c8c8c;
   --serif: 'Hina Mincho', "Yu Mincho", "Hiragino Mincho ProN", serif;
   --sans: 'Zen Kaku Gothic New', -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
   /* 種別カラー */
@@ -101,7 +103,7 @@ h1::after {
 .search-wrap input {
   width: 100%;
   background: var(--card-bg);
-  border: 1px solid var(--text-muted);
+  border: 1px solid var(--border-input);
   border-radius: 10px;
   color: var(--text);
   font-family: var(--sans);
@@ -140,7 +142,7 @@ h1::after {
 .btn-filter.active-book { border-color: var(--book); color: var(--book-text); background: var(--book-soft); font-weight: 500; }
 .btn-filter.active-english { border-color: var(--english); color: var(--english); background: var(--english-soft); font-weight: 500; }
 .btn-filter.active-review { border-color: var(--review); color: var(--review-text); background: var(--review-soft); font-weight: 500; }
-.sort-select { color: var(--text); border-color: var(--text-muted); }
+.sort-select { color: var(--text); border-color: var(--border-input); }
 
 /* ===== DECADE ROW ===== */
 .decade-row { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: center; margin-top: 0.9rem; }

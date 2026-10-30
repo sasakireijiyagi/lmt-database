@@ -4,20 +4,26 @@
 CiNii OpenSearch (q=風景構成法) を全件取得し、CiNii一目瞭然
 (sasakireijiyagi/cinii-to-excel-cloud) と同じ変換で論文レコードを生成する。
 書籍・英語文献 (CiNii に出ない分) は manual.json から読み込んでマージし、
-index.html の (1) const DATA = [...] と (2) ヘッダーの件数・最終更新 の
-2 箇所"だけ"を差し替える。HTML/CSS/JS の他の部分は一切変更しない。
+博士論文は CiNii と国立国会図書館サーチの両方から、題名に「風景構成法」を
+含むものを取得する。index.html の (1) const DATA = [...] と (2) ヘッダーの
+件数・最終更新 の 2 箇所"だけ"を差し替える。HTML/CSS/JS の他の部分は一切変更しない。
 """
 import json
 import os
 import re
 import sys
 import time
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlencode
 from urllib.request import urlopen, Request
 
 QUERY = "風景構成法"
 BASE = "https://cir.nii.ac.jp/opensearch/articles"
+DISSERTATIONS = "https://cir.nii.ac.jp/opensearch/dissertations"
+NDL = "https://ndlsearch.ndl.go.jp/api/opensearch"
+NDL_PAGE = 200
+DC = "{http://purl.org/dc/elements/1.1/}"
 HTML = "index.html"
 MANUAL = "manual.json"
 
@@ -28,22 +34,27 @@ PAGE_PAUSE = 0.7     # ページ取得間の小休止（相手に優しく）
 PASSES = 3           # 全件取得の最大パス数（取りこぼし回収用）
 
 
-def _fetch(start, count=100):
-    """CiNii を 1 回叩く。失敗時はバックオフしてリトライ。"""
-    url = f"{BASE}?{urlencode({'q': QUERY, 'count': count, 'start': start, 'format': 'json'})}"
+def _read(url):
+    """URL を読む。失敗時はバックオフしてリトライ。"""
     last = None
     for attempt in range(1, RETRIES + 1):
         try:
             req = Request(url, headers={"User-Agent": "lmt-database-updater/1.0"})
             with urlopen(req, timeout=90) as r:
-                return json.loads(r.read().decode("utf-8"))
-        except Exception as e:  # ネットワーク/タイムアウト/JSON異常すべて
+                return r.read()
+        except Exception as e:  # ネットワーク/タイムアウトすべて
             last = e
             wait = BACKOFF * attempt
-            print(f"  [retry] start={start} 試行{attempt}/{RETRIES} 失敗: {e} → {wait}s待機",
+            print(f"  [retry] {url} 試行{attempt}/{RETRIES} 失敗: {e} → {wait}s待機",
                   file=sys.stderr)
             time.sleep(wait)
-    raise RuntimeError(f"CiNii 取得失敗（start={start}, {RETRIES}回リトライ後）: {last}")
+    raise RuntimeError(f"取得失敗（{url}, {RETRIES}回リトライ後）: {last}")
+
+
+def _fetch(start, count=100, base=BASE):
+    """CiNii を 1 回叩く。"""
+    query = urlencode({'q': QUERY, 'count': count, 'start': start, 'format': 'json'})
+    return json.loads(_read(f"{base}?{query}").decode("utf-8"))
 
 
 def _warm_up():
@@ -173,6 +184,97 @@ def _map(entry):
     }
 
 
+def _norm_title(title):
+    return re.sub(r"[\s\W_]+", "", title or "").lower()
+
+
+def _thesis_record(authors, year, title, degree, grantor, url):
+    # 冒頭の定型句は題名ではないので外す（佛教大学の登録形式）
+    title = re.sub(r"^論文の概要および審査結果の要旨\s*:\s*", "", title)
+    return {"type": "thesis", "authors": authors, "year": year, "title": title,
+            "journal": degree, "volume": "", "issue": "", "pages": "",
+            "publisher": grantor, "url": url}
+
+
+def _cinii_theses():
+    """CiNii の博士論文。一覧には授与日が無いので個別レコードを読む。"""
+    records = []
+    start = 1
+    while True:
+        data = _fetch(start, 100, DISSERTATIONS)
+        items = data.get("items", [])
+        for e in items:
+            title = e.get("title", "") or ""
+            if QUERY not in title:
+                continue
+            url = e.get("@id", "") or ""
+            detail = json.loads(_read(url + ".json").decode("utf-8"))
+            names = (detail.get("degreeAwardInstitution") or {}).get("jpcoar:degreeGrantorName") or []
+            names = [n for n in names if n.get("@language") != "ja-Kana"]
+            grantor = next((n.get("@value", "") for n in names if n.get("@language") == "ja"),
+                           names[0].get("@value", "") if names else "")
+            granted = detail.get("ndl:dateGranted", "") or ""
+            authors = _map(e)["authors"].replace(",", "")
+            records.append(_thesis_record(authors, int(granted[:4]) if granted[:4].isdigit() else 0,
+                                          title, detail.get("ndl:degreeName", "") or "", grantor, url))
+            time.sleep(PAGE_PAUSE)
+        start += 100
+        if not items or start > int(data.get("opensearch:totalResults", 0)):
+            return records
+
+
+def _ndl_theses():
+    """国立国会図書館サーチの博士論文（CiNii に無いものを拾う）。"""
+    records = []
+    idx = 1
+    while True:
+        query = urlencode({"title": QUERY, "cnt": NDL_PAGE, "idx": idx})
+        items = list(ET.fromstring(_read(f"{NDL}?{query}")).iter("item"))
+        for it in items:
+            title = it.findtext("title") or ""
+            if "博士論文" not in (it.findtext("category") or "") or QUERY not in title:
+                continue
+            dates = " ".join(c.text or "" for c in it
+                             if c.tag.endswith("}date") or c.tag.endswith("}issued"))
+            year = re.search(r"(?<!\d)(?:19|20)\d\d(?!\d)", dates)
+            authors = (it.findtext(f"{DC}creator") or "").replace(",", "").replace(" ", "")
+            records.append(_thesis_record(authors, int(year.group()) if year else 0,
+                                          title, "", it.findtext(f"{DC}publisher") or "",
+                                          it.findtext("link") or ""))
+        if len(items) < NDL_PAGE:
+            return records
+        idx += NDL_PAGE
+        time.sleep(PAGE_PAUSE)
+
+
+def fetch_theses():
+    """博士論文を CiNii・国会図書館の両方から取り、既存に加算して返す。
+
+    題名で名寄せし、書誌の詳しい CiNii を優先する。どちらかが失敗しても
+    既存分は残す（更新全体は止めない）。"""
+    existing = []
+    try:
+        existing = [d for d in _existing_data(open(HTML, encoding="utf-8").read()) or []
+                    if d.get("type") == "thesis"]
+    except Exception:
+        pass
+    merged = {_norm_title(d["title"]): d for d in existing}
+    # 国会図書館を先に入れ、CiNii で上書きする。既存の年も年不明で消さない。
+    for name, fetch in (("国会図書館", _ndl_theses), ("CiNii", _cinii_theses)):
+        try:
+            for r in fetch():
+                key = _norm_title(r["title"])
+                old = merged.get(key)
+                if old and not r["year"]:
+                    r["year"] = old["year"]
+                if old and name == "国会図書館":
+                    continue
+                merged[key] = r
+        except Exception as e:
+            print(f"  [警告] 博士論文（{name}）を取得できず。既存分を残す: {e}", file=sys.stderr)
+    return sorted(merged.values(), key=lambda r: (r["year"], r["title"]), reverse=True)
+
+
 def load_manual():
     """書籍・英語文献（CiNii以外のソース含む手動管理分）を読む。
     読めない/壊れている/空 の場合は中止する。これらを絶対に失わないため、
@@ -223,7 +325,7 @@ def build_data():
             merged[_record_key(r)] = r
 
     cinii = sorted(merged.values(), key=lambda r: (r["year"], r["title"]), reverse=True)
-    return cinii + manual, len(cinii), total
+    return cinii + fetch_theses() + manual, len(cinii), total
 
 
 def _jp_month(dt):
@@ -250,6 +352,7 @@ def update_html(data, n_cinii):
     if old is not None and _norm(old) == _norm(data):
         return None
 
+    n_thesis = sum(1 for d in data if d["type"] == "thesis")
     n_book = sum(1 for d in data if d["type"] == "book")
     n_eng = sum(1 for d in data if d["type"] == "english")
     n_review = sum(1 for d in data if d["type"] == "review")
@@ -266,11 +369,12 @@ def update_html(data, n_cinii):
 
     # (2) ヘッダーの件数 + 最終更新（データが変わった時だけ進める）
     header = (f"収録 <strong>CiNii論文 {n_cinii}件</strong> ／ "
+              f"<strong>博士論文 {n_thesis}件</strong> ／ "
               f"<strong>書籍 {n_book}件</strong> ／ <strong>英語文献 {n_eng}件</strong> ／ "
               f"<strong>書評 {n_review}件</strong>"
               f"　合計 <strong>{total}件</strong>　（最終更新 {ym}）")
     html, n2 = re.subn(
-        r"収録 <strong>CiNii論文 \d+件</strong> ／ <strong>書籍 \d+件</strong> ／ "
+        r"収録 <strong>CiNii論文 \d+件</strong> ／ (?:<strong>博士論文 \d+件</strong> ／ )?<strong>書籍 \d+件</strong> ／ "
         r"<strong>英語文献 \d+件</strong>(?: ／ <strong>書評 \d+件</strong>)?"
         r"　合計 <strong>\d+件</strong>　（最終更新 [^）]*）",
         header, html, count=1)
@@ -278,7 +382,7 @@ def update_html(data, n_cinii):
         raise RuntimeError("ヘッダーの件数行を1箇所置換できなかった")
 
     open(HTML, "w", encoding="utf-8").write(html)
-    return n_cinii, n_book, n_eng, n_review, total, ym
+    return n_cinii, n_thesis, n_book, n_eng, n_review, total, ym
 
 
 def main():
@@ -291,8 +395,8 @@ def main():
     if result is None:
         print("[変更なし] データに変化なし。index.html は更新しない")
         return
-    n_cinii, n_book, n_eng, n_review, total, ym = result
-    print(f"[更新] CiNii {n_cinii} / 書籍 {n_book} / 英語 {n_eng} / 書評 {n_review} / 合計 {total}（最終更新 {ym}）")
+    n_cinii, n_thesis, n_book, n_eng, n_review, total, ym = result
+    print(f"[更新] CiNii {n_cinii} / 博士論文 {n_thesis} / 書籍 {n_book} / 英語 {n_eng} / 書評 {n_review} / 合計 {total}（最終更新 {ym}）")
 
 
 if __name__ == "__main__":

@@ -14,6 +14,8 @@ Actions 画面の **Run workflow** から手動実行も可能。
 - **CiNii論文**: `build.py` が CiNii OpenSearch（`q=風景構成法`）を全件取得して自動生成。
   変換ロジックは CiNii一目瞭然（cinii-to-excel-cloud）と同一。CiNii 本体の API を
   直接叩く（Streamlit アプリは経由しない）。
+- **博士論文**: CiNii と国立国会図書館サーチの両方から、題名に「風景構成法」を含むものを
+  取得する。題名で名寄せし、授与日・学位・大学は CiNii の個別レコードを優先する。
 - **書籍・英語文献**: CiNii に出ない／別ソースのものがあるため `manual.json` で手動管理する。
   build 時に CiNii 分とマージされ、**自動処理で書き換わることはない**。
 - 件数・内容に変化があった時だけ自動 commit → GitHub Pages が再公開。

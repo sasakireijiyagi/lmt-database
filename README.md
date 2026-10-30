@@ -16,6 +16,8 @@ Actions 画面の **Run workflow** から手動実行も可能。
   直接叩く（Streamlit アプリは経由しない）。
 - **博士論文**: CiNii と国立国会図書館サーチの両方から、題名に「風景構成法」を含むものを
   取得する。題名で名寄せし、授与日・学位・大学は CiNii の個別レコードを優先する。
+- **英語論文**: CiNii を `"landscape montage technique"` で検索し、題名に含むものを取得する。
+  日本語題の既収録や `manual.json` と同じ文献が出たら `DUPLICATE_CRIDS` に足す（要目視チェック）。
 - **書籍・英語文献**: CiNii に出ない／別ソースのものがあるため `manual.json` で手動管理する。
   build 時に CiNii 分とマージされ、**自動処理で書き換わることはない**。
 - 件数・内容に変化があった時だけ自動 commit → GitHub Pages が再公開。

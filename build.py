@@ -21,6 +21,7 @@ from urllib.request import urlopen, Request
 QUERY = "風景構成法"
 BASE = "https://cir.nii.ac.jp/opensearch/articles"
 DISSERTATIONS = "https://cir.nii.ac.jp/opensearch/dissertations"
+ENGLISH_QUERY = "landscape montage technique"
 NDL = "https://ndlsearch.ndl.go.jp/api/opensearch"
 NDL_PAGE = 200
 DC = "{http://purl.org/dc/elements/1.1/}"
@@ -51,9 +52,9 @@ def _read(url):
     raise RuntimeError(f"取得失敗（{url}, {RETRIES}回リトライ後）: {last}")
 
 
-def _fetch(start, count=100, base=BASE):
+def _fetch(start, count=100, base=BASE, q=QUERY):
     """CiNii を 1 回叩く。"""
-    query = urlencode({'q': QUERY, 'count': count, 'start': start, 'format': 'json'})
+    query = urlencode({'q': q, 'count': count, 'start': start, 'format': 'json'})
     return json.loads(_read(f"{base}?{query}").decode("utf-8"))
 
 
@@ -109,6 +110,14 @@ DUPLICATE_CRIDS = {
     "https://cir.nii.ac.jp/crid/1390585183424432768": "https://cir.nii.ac.jp/crid/1520583238594517888",  # 風景構成法に通底する風景巡礼の時間
     "https://cir.nii.ac.jp/crid/1571417127509955456": "https://cir.nii.ac.jp/crid/1010000782475883521",  # 統合失調症者の風景構成法における川の類型
     "https://cir.nii.ac.jp/crid/1390866271471382144": "https://cir.nii.ac.jp/crid/1520014265833217408",  # 中井久夫と風景構成法
+    # 以下は ENGLISH_QUERY で拾う分。manual・日本語題の既収録と同一の文献、および学会発表。
+    "https://cir.nii.ac.jp/crid/1390872387397863424": "https://doi.org/10.34417/sbb.5.1.22",  # Suzuki & Ishida（manual）
+    "https://cir.nii.ac.jp/crid/1360855570803315584": "https://link.springer.com/article/10.1186/s13256-019-2338-7",  # Takaya ら（manual）
+    "https://cir.nii.ac.jp/crid/1573387451561233024": "https://cir.nii.ac.jp/crid/1050571782547571328",  # 多田昌代（日本語題で収録）
+    "https://cir.nii.ac.jp/crid/1010000782475883524": "https://cir.nii.ac.jp/crid/1390572174913559808",  # 柳沢和彦ら（同題の別索引）
+    "https://cir.nii.ac.jp/crid/1010000782475883525": "https://cir.nii.ac.jp/crid/1010000782475883521",  # 柳沢和彦ら（学会発表）
+    "https://cir.nii.ac.jp/crid/1010282256777780493": "https://cir.nii.ac.jp/crid/1010282256777780481",  # 濱野清志ら（バリ州・英語題）
+    "https://cir.nii.ac.jp/crid/1010282256777780496": "https://cir.nii.ac.jp/crid/1010282256777780484",  # 濱野清志ら（スリランカ・カメルーン・英語題）
 }
 
 
@@ -182,6 +191,35 @@ def _map(entry):
         "publisher": entry.get("dc:publisher", "") or "",
         "url": url,
     }
+
+
+def fetch_english(manual_urls):
+    """題名に ENGLISH_QUERY を含む論文を CiNii から取り、既存に加算して返す。
+
+    「風景構成法」の検索に出ない英語題の論文を拾う。失敗しても既存分は残す。"""
+    existing = []
+    try:
+        existing = [d for d in _existing_data(open(HTML, encoding="utf-8").read()) or []
+                    if d.get("type") == "english" and d.get("url") not in manual_urls
+                    and d.get("url") not in DUPLICATE_CRIDS]
+    except Exception:
+        pass
+    merged = {_record_key(d): d for d in existing}
+    try:
+        phrase = f'"{ENGLISH_QUERY}"'
+        total = int(_fetch(1, 1, q=phrase).get("opensearch:totalResults", 0))
+        for start in range(1, total + 1, 100):
+            for e in _fetch(start, 100, q=phrase).get("items", []):
+                r = _map(e)
+                if (ENGLISH_QUERY not in r["title"].lower() or r["url"] in DUPLICATE_CRIDS
+                        or r["url"] in manual_urls):
+                    continue
+                r["type"] = "english"
+                merged[_record_key(r)] = r
+            time.sleep(PAGE_PAUSE)
+    except Exception as e:
+        print(f"  [警告] 英語論文を取得できず。既存分を残す: {e}", file=sys.stderr)
+    return sorted(merged.values(), key=lambda r: (r["year"], r["title"]), reverse=True)
 
 
 def _norm_title(title):
@@ -325,7 +363,7 @@ def build_data():
             merged[_record_key(r)] = r
 
     cinii = sorted(merged.values(), key=lambda r: (r["year"], r["title"]), reverse=True)
-    return cinii + fetch_theses() + manual, len(cinii), total
+    return cinii + fetch_theses() + fetch_english(manual_urls) + manual, len(cinii), total
 
 
 def _jp_month(dt):

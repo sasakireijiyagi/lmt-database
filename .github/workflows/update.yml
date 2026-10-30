@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: monthly-update
@@ -28,6 +29,8 @@ jobs:
         run: python build.py
 
       - name: Commit if changed
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -37,5 +40,7 @@ jobs:
             git add index.html
             git commit -m "chore: 月次自動更新（CiNii再取得）"
             git push
+            # GITHUB_TOKEN の push では deploy.yml が動かないので明示的に起動する
+            gh workflow run deploy.yml --ref main
             echo "index.html を更新して push しました"
           fi

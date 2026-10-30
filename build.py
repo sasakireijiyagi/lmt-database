@@ -234,6 +234,23 @@ def _thesis_record(authors, year, title, degree, grantor, url):
             "publisher": grantor, "url": url}
 
 
+def _thesis_link(detail, fallback):
+    """リンク先を決める。大学のリポジトリ → 国会図書館 → CiNii の順。"""
+    ids = [i.get("identifier") or {} for i in detail.get("productIdentifier") or []]
+    def values(kind):
+        return [i.get("@value", "") for i in ids if i.get("@type") == kind]
+    dois = [v for v in values("DOI") if not v.startswith("10.11501/")]  # 10.11501 は国会図書館
+    uris = values("URI")
+    repo = ([f"https://doi.org/{v}" for v in dois]
+            + [v.replace("http://", "https://", 1) for v in values("HDL")]
+            + [v for v in uris if "ndl.go.jp" not in v])
+    ndl = ([v for v in uris if "dl.ndl.go.jp" in v]
+           + [v for v in uris if "ndlsearch.ndl.go.jp" in v]
+           + [f"https://dl.ndl.go.jp/pid/{v.split('/', 1)[1]}" for v in values("DOI")
+              if v.startswith("10.11501/")])
+    return (repo + ndl + [fallback])[0]
+
+
 def _cinii_theses():
     """CiNii の博士論文。一覧には授与日が無いので個別レコードを読む。"""
     records = []
@@ -254,7 +271,8 @@ def _cinii_theses():
             granted = detail.get("ndl:dateGranted", "") or ""
             authors = _map(e)["authors"].replace(",", "")
             records.append(_thesis_record(authors, int(granted[:4]) if granted[:4].isdigit() else 0,
-                                          title, detail.get("ndl:degreeName", "") or "", grantor, url))
+                                          title, detail.get("ndl:degreeName", "") or "", grantor,
+                                          _thesis_link(detail, url)))
             time.sleep(PAGE_PAUSE)
         start += 100
         if not items or start > int(data.get("opensearch:totalResults", 0)):
